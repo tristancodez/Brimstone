@@ -4,14 +4,11 @@ import ChatArea from './components/ChatArea';
 import MeetingsArea from './components/MeetingArea';
 import TodoArea from './components/Todo';
 import DashboardArea from './components/DashboardArea';
-import LoginRegister from './components/LoginRegister';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
-import { useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 
 function App() {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
@@ -87,17 +84,7 @@ function App() {
     };
   }, []);
 
-  if (!user) {
-    return (
-      <AccessibilityProvider>
-        <ThemeProvider>
-          <a href="#main" className="skip-to-content">Skip to content</a>
-          <LoginRegister />
-          <KeyboardShortcutsHelp />
-        </ThemeProvider>
-      </AccessibilityProvider>
-    );
-  }
+
 
   const renderContent = () => {
     switch (activeTab) {

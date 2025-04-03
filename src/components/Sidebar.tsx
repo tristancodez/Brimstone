@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Users, Calendar, Settings, Search, Menu, LogOut, CheckSquare, 
+import { MessageSquare, Users, Calendar, Settings, Search, Menu, CheckSquare, 
   LayoutDashboard, Moon, Sun, ZoomIn, ZoomOut, Accessibility, Bell, ChevronRight, HelpCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 
@@ -61,7 +60,6 @@ const NavItem: React.FC<NavItemProps> = ({
 );
 
 const Sidebar: React.FC = () => {
-  const { user, logout } = useAuth();
   const { isDark, toggleTheme, increaseFontSize, decreaseFontSize } = useTheme();
   const { screenReaderEnabled, toggleScreenReader } = useAccessibility();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -291,24 +289,23 @@ const Sidebar: React.FC = () => {
         {collapsed ? (
           <div className="relative group">
             <img
-              src={user?.avatar}
-              alt={user?.username}
+              src="https://api.dicebear.com/7.x/avatars/svg?seed=user"
+              alt="User"
               className="w-10 h-10 rounded-full border-2 border-purple-200 dark:border-purple-900/30"
             />
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-dark-card rounded-full"></div>
             
             <div className="absolute left-full ml-2 bottom-0 w-48 bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border p-3 invisible group-hover:visible transition-all duration-200 opacity-0 group-hover:opacity-100 z-10">
-              <p className="font-medium text-gray-800 dark:text-dark-text-primary">{user?.username}</p>
-              <p className="text-sm text-gray-500 dark:text-dark-text-secondary truncate">{user?.email}</p>
+              <p className="font-medium text-gray-800 dark:text-dark-text-primary">User</p>
+              <p className="text-sm text-gray-500 dark:text-dark-text-secondary truncate">user@example.com</p>
               <div className="mt-2 pt-2 border-t border-gray-200 dark:border-dark-border">
                 <button className="w-full text-left py-1 text-sm text-gray-700 dark:text-dark-text-primary hover:text-purple-600 dark:hover:text-purple-400">
                   Settings
                 </button>
                 <button 
-                  onClick={logout}
                   className="w-full text-left py-1 text-sm text-gray-700 dark:text-dark-text-primary hover:text-purple-600 dark:hover:text-purple-400"
                 >
-                  Logout
+                  Profile
                 </button>
               </div>
             </div>
@@ -319,19 +316,19 @@ const Sidebar: React.FC = () => {
               <div className="relative">
                 <img
                   src="https://cdn-icons-png.flaticon.com/512/64/64572.png"
-                  alt={user?.username}
+                  alt="User"
                   className="w-10 h-10 rounded-full border-2 border-purple-200 dark:border-purple-900/30"
                 />
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-dark-card rounded-full"></div>
               </div>
               <div className="ml-3">
-                <p className="font-medium text-gray-800 dark:text-dark-text-primary text-sm-dynamic">{user?.username}</p>
-                <p className="text-sm text-gray-500 dark:text-dark-text-secondary text-xs-dynamic truncate">{user?.email}</p>
+                <p className="font-medium text-gray-800 dark:text-dark-text-primary text-sm-dynamic">User</p>
+                <p className="text-sm text-gray-500 dark:text-dark-text-secondary text-xs-dynamic truncate">user@example.com</p>
               </div>
             </div>
             <div className="space-y-1">
               <NavItem icon={<Settings size={20} />} text="Settings" />
-              <NavItem icon={<LogOut size={20} />} text="Logout" onClick={logout} />
+              <NavItem icon={<Settings size={20} />} text="Profile" />
             </div>
           </>
         )}

@@ -7,7 +7,6 @@ import {
   Menu, Bell
 } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { format, isToday, isYesterday } from 'date-fns';
 
@@ -112,8 +111,8 @@ const ChatArea: React.FC = () => {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'pinned'>('all');
   
-  // Refs
-  const { user } = useAuth();
+  // Mock user data
+  const mockUser = { id: '1', username: 'User', email: 'user@example.com', avatar: 'https://api.dicebear.com/7.x/avatars/svg?seed=user' };
   const { isDark } = useTheme(); // Using isDark instead of theme/darkMode
   const socketRef = useRef<Socket>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -127,11 +126,11 @@ const ChatArea: React.FC = () => {
 
   // Initialize socket connection and fetch conversations
   useEffect(() => {
-    if (!user) return;
+    if (!mockUser) return;
     
     // Connect to socket server
     socketRef.current = io('http://localhost:3000', {
-      query: { userId: user.id },
+      query: { userId: mockUser.id },
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -176,7 +175,7 @@ const ChatArea: React.FC = () => {
         // Mark as read if this conversation is active
         socketRef.current?.emit('markAsRead', { 
           conversationId: message.conversationId, 
-          userId: user.id 
+          userId: mockUser.id 
         });
       }
       
@@ -270,7 +269,7 @@ const ChatArea: React.FC = () => {
     // Listen for typing status updates
     socketRef.current.on('typingStatus', ({ conversationId, userId, isTyping }: { conversationId: string, userId: string, isTyping: boolean }) => {
       // Don't show typing indicator for current user
-      if (userId === user.id) return;
+      if (userId === mockUser.id) return;
       
       // Update typing status for the conversation
       setConversations(prev => prev.map(conv => {
@@ -311,7 +310,7 @@ const ChatArea: React.FC = () => {
       // Update message status to 'read' for all messages sent by current user
       if (activeConversation?.id === conversationId) {
         setMessages(prev => prev.map(msg => {
-          if (msg.senderId === user.id && (msg.status === 'sent' || msg.status === 'delivered')) {
+          if (msg.senderId === mockUser.id && (msg.status === 'sent' || msg.status === 'delivered')) {
             return { ...msg, status: 'read' };
           }
           return msg;
@@ -335,7 +334,7 @@ const ChatArea: React.FC = () => {
       socketRef.current?.off('messageRead');
       socketRef.current?.disconnect();
     };
-  }, [user, activeConversation]);
+  }, [activeConversation]);
 
   // Fetch all conversations
   const fetchConversations = async () => {
@@ -416,9 +415,9 @@ const ChatArea: React.FC = () => {
 
   // Mark conversation as read
   const markConversationAsRead = (conversationId: string) => {
-    if (!user || !socketRef.current) return;
+    if (!mockUser || !socketRef.current) return;
     
-    socketRef.current.emit('markAsRead', { conversationId, userId: user.id });
+    socketRef.current.emit('markAsRead', { conversationId, userId: mockUser.id });
     
     // Update local state
     setConversations(prev => 
@@ -435,7 +434,7 @@ const ChatArea: React.FC = () => {
   // Send a new message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !activeConversation) return;
+    if (!newMessage.trim() || !mockUser || !activeConversation) return;
     
     // Clear any editing or replying state
     setEditingMessage(null);
@@ -445,11 +444,11 @@ const ChatArea: React.FC = () => {
     const newMsg: Message = {
       id: tempId,
       conversationId: activeConversation.id,
-      senderId: user.id,
-      senderName: user.displayName || user.id,
+      senderId: mockUser.id,
+      senderName: mockUser.username,
       content: newMessage,
       timestamp: new Date().toISOString(),
-      avatar: user.avatar || '',
+      avatar: mockUser.avatar,
       status: 'sending',
       edited: false,
       deleted: false,
@@ -476,16 +475,16 @@ const ChatArea: React.FC = () => {
       conversationId: activeConversation.id,
       content: newMessage,
       replyToId: replyingTo?.id,
-      senderId: user.id,
-      senderName: user.displayName || user.id,
-      avatar: user.avatar || '',
+      senderId: mockUser.id,
+      senderName: mockUser.username,
+      avatar: mockUser.avatar,
       timestamp: newMsg.timestamp
     });
     
     // Update typing status
     socketRef.current?.emit('typingStatus', {
       conversationId: activeConversation.id,
-      userId: user.id,
+      userId: mockUser.id,
       isTyping: false
     });
     
@@ -510,7 +509,7 @@ const ChatArea: React.FC = () => {
   // Edit an existing message
   const handleEditMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !editingMessage || !user) return;
+    if (!newMessage.trim() || !editingMessage || !mockUser) return;
     
     // Update locally first
     setMessages(prev => 
@@ -534,7 +533,7 @@ const ChatArea: React.FC = () => {
   
   // Delete a message
   const handleDeleteMessage = (messageId: string) => {
-    if (!user) return;
+    if (!mockUser) return;
     
     // Update locally first
     setMessages(prev => 
@@ -554,13 +553,13 @@ const ChatArea: React.FC = () => {
   
   // Add reaction to a message
   const handleAddReaction = (messageId: string, emoji: string) => {
-    if (!user) return;
+    if (!mockUser) return;
     
     socketRef.current?.emit('addReaction', {
       messageId,
       emoji,
-      userId: user.id,
-      username: user.name
+      userId: mockUser.id,
+      username: mockUser.username
     });
     
     // Close reaction picker
@@ -569,23 +568,23 @@ const ChatArea: React.FC = () => {
   
   // Remove reaction from a message
   const handleRemoveReaction = (messageId: string, emoji: string) => {
-    if (!user) return;
+    if (!mockUser) return;
     
     socketRef.current?.emit('removeReaction', {
       messageId,
       emoji,
-      userId: user.id
+      userId: mockUser.id
     });
   };
   
   // Check if current user sent the message
   const isCurrentUser = (senderId: string) => {
-    return user?.id === senderId;
+    return mockUser?.id === senderId;
   };
   
   // Start typing indicator
   const handleTypingStart = () => {
-    if (!user || !activeConversation || !socketRef.current) return;
+    if (!mockUser || !activeConversation || !socketRef.current) return;
     
     // Clear any existing timeout
     if (typingTimeoutRef.current) {
@@ -593,9 +592,10 @@ const ChatArea: React.FC = () => {
     }
     
     // Emit typing start event
-    socketRef.current.emit('typingStart', {
+    socketRef.current.emit('typingStatus', {
       conversationId: activeConversation.id,
-      userId: user.id
+      userId: mockUser.id,
+      isTyping: true
     });
     
     // Set timeout to stop typing indicator after 3 seconds of inactivity
@@ -606,11 +606,12 @@ const ChatArea: React.FC = () => {
   
   // Stop typing indicator
   const handleTypingStop = () => {
-    if (!user || !activeConversation || !socketRef.current) return;
+    if (!mockUser || !activeConversation || !socketRef.current) return;
     
-    socketRef.current.emit('typingStop', {
+    socketRef.current.emit('typingStatus', {
       conversationId: activeConversation.id,
-      userId: user.id
+      userId: mockUser.id,
+      isTyping: false
     });
     
     if (typingTimeoutRef.current) {
@@ -638,9 +639,9 @@ const ChatArea: React.FC = () => {
               role: 'member'
             },
             {
-              id: user?.id || 'current-user',
-              name: user?.username || 'You',
-              avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+              id: mockUser?.id || 'current-user',
+              name: mockUser?.username || 'You',
+              avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
               status: 'online',
               isCurrentUser: true,
               role: 'member'
@@ -673,9 +674,9 @@ const ChatArea: React.FC = () => {
               role: 'member'
             },
             {
-              id: user?.id || 'current-user',
-              name: user?.username || 'You',
-              avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+              id: mockUser?.id || 'current-user',
+              name: mockUser?.username || 'You',
+              avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
               status: 'online',
               isCurrentUser: true,
               role: 'member'
@@ -684,7 +685,7 @@ const ChatArea: React.FC = () => {
           lastMessage: {
             content: 'Can you send me the report?',
             timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-            senderId: user?.id || 'current-user',
+            senderId: mockUser?.id || 'current-user',
             status: 'delivered'
           },
           unreadCount: 0,
@@ -723,9 +724,9 @@ const ChatArea: React.FC = () => {
               role: 'member'
             },
             {
-              id: user?.id || 'current-user',
-              name: user?.username || 'You',
-              avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+              id: mockUser?.id || 'current-user',
+              name: mockUser?.username || 'You',
+              avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
               status: 'online',
               isCurrentUser: true,
               role: 'member'
@@ -768,11 +769,11 @@ const ChatArea: React.FC = () => {
         {
           id: '1002',
           conversationId: '1',
-          senderId: user?.id || 'current-user',
-          senderName: user?.username || 'You',
+          senderId: mockUser?.id || 'current-user',
+          senderName: mockUser?.username || 'You',
           content: 'I\'m good, thanks! Just working on the project.',
           timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(), // 55 minutes ago
-          avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+          avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
           status: 'read',
           edited: false,
           deleted: false,
@@ -796,11 +797,11 @@ const ChatArea: React.FC = () => {
         {
           id: '1004',
           conversationId: '1',
-          senderId: user?.id || 'current-user',
-          senderName: user?.username || 'You',
+          senderId: mockUser?.id || 'current-user',
+          senderName: mockUser?.username || 'You',
           content: 'It\'s going well! I\'ve completed about 70% of it.',
           timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
-          avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+          avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
           status: 'read',
           edited: false,
           deleted: false,
@@ -833,11 +834,11 @@ const ChatArea: React.FC = () => {
         {
           id: '1006',
           conversationId: '1',
-          senderId: user?.id || 'current-user',
-          senderName: user?.username || 'You',
+          senderId: mockUser?.id || 'current-user',
+          senderName: mockUser?.username || 'You',
           content: 'Thanks! I might need your input on the UI design.',
           timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+          avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
           status: 'read',
           edited: false,
           deleted: false,
@@ -861,11 +862,11 @@ const ChatArea: React.FC = () => {
         {
           id: '1008',
           conversationId: '1',
-          senderId: user?.id || 'current-user',
-          senderName: user?.username || 'You',
+          senderId: mockUser?.id || 'current-user',
+          senderName: mockUser?.username || 'You',
           content: 'Perfect! Let\'s meet at 3pm.',
           timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 minutes ago
-          avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+          avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
           status: 'read',
           edited: false,
           deleted: false,
@@ -912,11 +913,11 @@ const ChatArea: React.FC = () => {
         {
           id: '1011',
           conversationId: '1',
-          senderId: user?.id || 'current-user',
-          senderName: user?.username || 'You',
+          senderId: mockUser?.id || 'current-user',
+          senderName: mockUser?.username || 'You',
           content: 'That looks great! I like the layout.',
           timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-          avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
+          avatar: mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff',
           status: 'delivered',
           edited: false,
           deleted: false,
@@ -925,8 +926,8 @@ const ChatArea: React.FC = () => {
           reactions: [
             {
               emoji: '👍',
-              userId: user?.id || 'current-user',
-              username: user?.username || 'You'
+              userId: mockUser?.id || 'current-user',
+              username: mockUser?.username || 'You'
             },
             {
               emoji: '🎉',
@@ -939,7 +940,7 @@ const ChatArea: React.FC = () => {
       
       setMessages(mockMessages);
     }
-  }, [user, conversations.length]);
+  }, [mockUser, conversations.length]);
 
   // Handle conversation selection
   const handleConversationSelect = (conversation: Conversation) => {
@@ -966,7 +967,7 @@ const ChatArea: React.FC = () => {
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || !activeConversation || !user) return;
+    if (!files || !activeConversation || !mockUser) return;
     
     // Process each file
     Array.from(files).forEach(file => {
@@ -1000,11 +1001,11 @@ const ChatArea: React.FC = () => {
       const newMsg: Message = {
         id: tempId,
         conversationId: activeConversation.id,
-        senderId: user.id,
-        senderName: user.username,
+        senderId: mockUser.id,
+        senderName: mockUser.username,
         content: '',
         timestamp: new Date().toISOString(),
-        avatar: user.avatar,
+        avatar: mockUser.avatar,
         status: 'sending',
         edited: false,
         deleted: false,
@@ -1062,16 +1063,16 @@ const ChatArea: React.FC = () => {
       
       // In a real app, you would stop the recording and send the audio file
       // For demo purposes, we'll simulate sending an audio message
-      if (recordingDuration > 1 && activeConversation && user) {
+      if (recordingDuration > 1 && activeConversation && mockUser) {
         const tempId = `temp-${Date.now()}`;
         const newMsg: Message = {
           id: tempId,
           conversationId: activeConversation.id,
-          senderId: user.id,
-          senderName: user.username,
+          senderId: mockUser.id,
+          senderName: mockUser.username,
           content: '',
           timestamp: new Date().toISOString(),
-          avatar: user.avatar,
+          avatar: mockUser.avatar,
           status: 'sending',
           edited: false,
           deleted: false,
@@ -1307,7 +1308,7 @@ const ChatArea: React.FC = () => {
                     <p className="text-sm text-gray-500 dark:text-dark-text-secondary truncate">
                       {conversation.lastMessage ? (
                         <>
-                          {conversation.lastMessage.senderId === user?.id ? 'You: ' : ''}
+                          {conversation.lastMessage.senderId === mockUser.id ? 'You: ' : ''}
                           {conversation.lastMessage.content}
                         </>
                       ) : 'No messages yet'}
@@ -1367,7 +1368,7 @@ const ChatArea: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <h3 className="font-medium text-gray-900 dark:text-dark-text-primary">{activeConversation.name}</h3>
-                  <p className="text-xs text-gray-500 dark:text-dark-text-secondary">
+                  <p className="text-xs text-gray-500 dark:text-dark-text-muted">
                     {activeConversation.type === 'direct' ? (
                       activeConversation.participants.find(p => !p.isCurrentUser)?.status === 'online' 
                         ? 'Active now' 
@@ -1454,7 +1455,7 @@ const ChatArea: React.FC = () => {
               
               {/* Messages in group */}
               {group.map((message, index) => {
-                const isCurrentUserMsg = message.senderId === user?.id;
+                const isCurrentUserMsg = message.senderId === mockUser.id;
                 const showAvatar = index === 0 || group[index - 1].senderId !== message.senderId;
                 const isLastInGroup = index === group.length - 1 || group[index + 1].senderId !== message.senderId;
                 
@@ -1572,7 +1573,7 @@ const ChatArea: React.FC = () => {
                     {isCurrentUserMsg && showAvatar && (
                       <div className="flex-shrink-0 ml-2">
                         <img 
-                          src={user?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff'} 
+                          src={mockUser?.avatar || 'https://ui-avatars.com/api/?name=You&background=6d28d9&color=fff'} 
                           alt="Your avatar" 
                           className="h-8 w-8 rounded-full mt-1" 
                         />

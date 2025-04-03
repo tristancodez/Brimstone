@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckSquare, Square, Plus, Calendar, Clock, Filter, Search, Trash2, Edit, ArrowUp, ArrowDown, X, AlertCircle } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 interface Todo {
@@ -35,7 +34,6 @@ const TodoArea: React.FC = () => {
   });
   const [tagInput, setTagInput] = useState('');
   const tagInputRef = useRef<HTMLInputElement>(null);
-  const { } = useAuth();
   const { } = useTheme();
 
   useEffect(() => {
